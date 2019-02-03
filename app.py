@@ -3,12 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow 
 import os
 import json
+import csv
+import json
+import requests
 
 # Init app
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 # Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'jefflovesyou.db')
+db_name = 'jefflovesyou.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, db_name)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Init db
 db = SQLAlchemy(app)
@@ -56,6 +60,27 @@ def add_policy():
 @app.route('/')
 def ping():
   return jsonify({'ping': 'pong'})
+
+@app.route('/createdb')
+def create_databases():
+    db.create_all()
+    return jsonify({'created': db_name})
+
+@app.route('/import/<filename>')
+def import_csv(filename):
+    with open(filename, 'r') as csvfile:
+        data_reader = csv.DictReader(csvfile)
+        for row in data_reader:
+            to_import = {}
+            to_import['policyID'] = row['policyID']
+            to_import['statecode'] = row['statecode']
+            to_import['county'] = row['county']
+            to_import['eq_site_limit'] = row['eq_site_limit']
+            to_import['hu_site_limit'] = row['hu_site_limit']
+            results = requests.post('http://localhost:5000/policy', data = json.dumps(to_import))
+            print(results.text)
+    return jsonify({'imported': filename})
+
 
 @app.route('/policy', methods=['GET'])
 def get_all_policies():
