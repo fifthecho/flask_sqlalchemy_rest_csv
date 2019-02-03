@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy 
+from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow 
 import os
 import json
@@ -87,6 +87,12 @@ def get_all_policies():
   all_policies = InsurancePolicy.query.all()
   result = policies_schema.dump(all_policies)
   return jsonify(result.data)
+
+@app.route('/policy/<county>')
+def get_county_policy(county):
+  county_policy = InsurancePolicy.query.filter_by(county=county).all()
+  result = policies_schema.dump(county_policy)
+  return jsonify(result)
 
 # # Get All Products
 # @app.route('/product', methods=['GET'])
